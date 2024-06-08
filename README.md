@@ -19,4 +19,9 @@ if your YAML properties are "first-name" and "last-name" then you can set "{last
 - you can not create new folders by setting the filename to "{foldername}/{filename}" (yet)
 - "[[Links to Files]]" work, the brackets get stripped
 
+# known limitations
+- dates are not yet rendered correctly
+- its only changin the name of the active file - no background updates recognized for performance
+- there is no setting to run this only shortcut 
+
 let me know if anything is odd
