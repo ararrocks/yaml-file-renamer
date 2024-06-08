@@ -79,7 +79,11 @@ export default class RenameOnYAMLPlugin extends Plugin {
     const { data } = matter(content);
 
     if (data) {
-      const hasTrackedKeyChanged = this.trackedKeys.some(key => data.hasOwnProperty(key) && (!this.previousMetadata[file.path] || this.previousMetadata[file.path][key] !== data[key]));
+      const hasTrackedKeyChanged = this.trackedKeys.some(key => 
+        data.hasOwnProperty(key) && 
+        (!this.previousMetadata[file.path] || this.previousMetadata[file.path][key] !== data[key]) &&
+        data[key] != null && data[key] !== ''
+      );
       
       if (!hasTrackedKeyChanged) return; // Exit if no tracked key has changed
 
@@ -87,10 +91,12 @@ export default class RenameOnYAMLPlugin extends Plugin {
         if (file.path.startsWith(folderSetting.folderPath)) {
           let newFileName = folderSetting.fileNameTemplate;
 
-          // Replace placeholders with YAML values
+          // Replace placeholders with YAML values, ignore keys that are null, empty or not present in YAML
           for (const key in data) {
-            if (data.hasOwnProperty(key)) {
+            if (data.hasOwnProperty(key) && data[key] != null && data[key] !== '') {
               newFileName = newFileName.replace(`{${key}}`, data[key]);
+            } else {
+              newFileName = newFileName.replace(`{${key}}`, '');
             }
           }
 
@@ -117,7 +123,6 @@ export default class RenameOnYAMLPlugin extends Plugin {
           }
 
           if (file.name !== newFileName && newFileName !== null && newFileName !== '' && newFileName !== 'null') {
-            
             console.log(newFileName);
             await this.app.vault.rename(file, newFilePath);
           }
@@ -145,7 +150,7 @@ export default class RenameOnYAMLPlugin extends Plugin {
     const changedKeys: { [key: string]: any } = {};
 
     this.trackedKeys.forEach(key => {
-      if (metadata.hasOwnProperty(key)) {
+      if (metadata.hasOwnProperty(key) && metadata[key] != null && metadata[key] !== '') {
         if (!this.previousMetadata[filePath] || this.previousMetadata[filePath][key] !== metadata[key]) {
           changedKeys[key] = metadata[key];
         }
@@ -163,7 +168,7 @@ export default class RenameOnYAMLPlugin extends Plugin {
       this.previousMetadata[filePath] = {};
     }
     this.trackedKeys.forEach(key => {
-      if (metadata.hasOwnProperty(key)) {
+      if (metadata.hasOwnProperty(key) && metadata[key] != null && metadata[key] !== '') {
         this.previousMetadata[filePath][key] = metadata[key];
       }
     });

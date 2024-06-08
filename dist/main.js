@@ -3695,14 +3695,18 @@ var RenameOnYAMLPlugin = class extends import_obsidian3.Plugin {
     const content = await this.app.vault.read(file);
     const { data } = (0, import_gray_matter.default)(content);
     if (data) {
-      const hasTrackedKeyChanged = this.trackedKeys.some((key) => data.hasOwnProperty(key) && (!this.previousMetadata[file.path] || this.previousMetadata[file.path][key] !== data[key]));
+      const hasTrackedKeyChanged = this.trackedKeys.some(
+        (key) => data.hasOwnProperty(key) && (!this.previousMetadata[file.path] || this.previousMetadata[file.path][key] !== data[key]) && data[key] != null && data[key] !== ""
+      );
       if (!hasTrackedKeyChanged) return;
       for (const folderSetting of this.settings.folderSettings) {
         if (file.path.startsWith(folderSetting.folderPath)) {
           let newFileName = folderSetting.fileNameTemplate;
           for (const key in data) {
-            if (data.hasOwnProperty(key)) {
+            if (data.hasOwnProperty(key) && data[key] != null && data[key] !== "") {
               newFileName = newFileName.replace(`{${key}}`, data[key]);
+            } else {
+              newFileName = newFileName.replace(`{${key}}`, "");
             }
           }
           newFileName = newFileName.replace(BRACKETS_AND_PARENS, "");
@@ -3741,7 +3745,7 @@ var RenameOnYAMLPlugin = class extends import_obsidian3.Plugin {
   checkAndLogChanges(filePath, metadata) {
     const changedKeys = {};
     this.trackedKeys.forEach((key) => {
-      if (metadata.hasOwnProperty(key)) {
+      if (metadata.hasOwnProperty(key) && metadata[key] != null && metadata[key] !== "") {
         if (!this.previousMetadata[filePath] || this.previousMetadata[filePath][key] !== metadata[key]) {
           changedKeys[key] = metadata[key];
         }
@@ -3757,7 +3761,7 @@ var RenameOnYAMLPlugin = class extends import_obsidian3.Plugin {
       this.previousMetadata[filePath] = {};
     }
     this.trackedKeys.forEach((key) => {
-      if (metadata.hasOwnProperty(key)) {
+      if (metadata.hasOwnProperty(key) && metadata[key] != null && metadata[key] !== "") {
         this.previousMetadata[filePath][key] = metadata[key];
       }
     });
