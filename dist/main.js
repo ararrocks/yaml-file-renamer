@@ -3644,24 +3644,59 @@ var DEFAULT_SETTINGS = {
   folderSettings: []
 };
 var RenameOnYAMLPlugin = class extends import_obsidian3.Plugin {
+  constructor() {
+    super(...arguments);
+    this.trackedKeys = [];
+    this.previousMetadata = {};
+  }
   async onload() {
     await this.loadSettings();
     this.addSettingTab(new RenameOnYAMLSettingTab(this.app, this));
+    this.updateTrackedKeys();
+    this.registerEvent(
+      this.app.workspace.on("file-open", this.initializeMetadataCache.bind(this))
+    );
     this.registerEvent(
       this.app.vault.on("modify", this.handleFileChange.bind(this))
+    );
+    this.registerEvent(
+      this.app.metadataCache.on("changed", (file, data, cachedData) => {
+        const metadata = cachedData?.frontmatter;
+        if (metadata) {
+          this.checkAndLogChanges(file.path, metadata);
+        }
+      })
     );
   }
   async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    this.updateTrackedKeys();
   }
   async saveSettings() {
     await this.saveData(this.settings);
+    this.updateTrackedKeys();
+  }
+  updateTrackedKeys() {
+    this.trackedKeys = [];
+    for (const folderSetting of this.settings.folderSettings) {
+      const matches = folderSetting.fileNameTemplate.match(/{(.*?)}/g);
+      if (matches) {
+        for (const match of matches) {
+          const key = match.replace(/[{}]/g, "");
+          if (!this.trackedKeys.includes(key)) {
+            this.trackedKeys.push(key);
+          }
+        }
+      }
+    }
   }
   async handleFileChange(file) {
     if (file.extension !== "md") return;
     const content = await this.app.vault.read(file);
     const { data } = (0, import_gray_matter.default)(content);
     if (data) {
+      const hasTrackedKeyChanged = this.trackedKeys.some((key) => data.hasOwnProperty(key) && (!this.previousMetadata[file.path] || this.previousMetadata[file.path][key] !== data[key]));
+      if (!hasTrackedKeyChanged) return;
       for (const folderSetting of this.settings.folderSettings) {
         if (file.path.startsWith(folderSetting.folderPath)) {
           let newFileName = folderSetting.fileNameTemplate;
@@ -3684,13 +3719,51 @@ var RenameOnYAMLPlugin = class extends import_obsidian3.Plugin {
             new Notice(`A file named "${newFileName}" already exists.`);
             return;
           }
-          if (file.name !== newFileName) {
+          if (file.name !== newFileName && newFileName !== null && newFileName !== "" && newFileName !== "null") {
+            console.log(newFileName);
             await this.app.vault.rename(file, newFilePath);
           }
           break;
         }
       }
+      this.updatePreviousMetadata(file.path, data);
     }
+  }
+  initializeMetadataCache(file) {
+    if (!file || file.extension !== "md") return;
+    this.app.vault.read(file).then((content) => {
+      const { data } = (0, import_gray_matter.default)(content);
+      if (data) {
+        this.updatePreviousMetadata(file.path, data);
+      }
+    });
+  }
+  checkAndLogChanges(filePath, metadata) {
+    const changedKeys = {};
+    this.trackedKeys.forEach((key) => {
+      if (metadata.hasOwnProperty(key)) {
+        if (!this.previousMetadata[filePath] || this.previousMetadata[filePath][key] !== metadata[key]) {
+          changedKeys[key] = metadata[key];
+        }
+      }
+    });
+    if (Object.keys(changedKeys).length > 0) {
+      console.log("Tracked keys have changed:", changedKeys);
+      this.updatePreviousMetadata(filePath, metadata);
+    }
+  }
+  updatePreviousMetadata(filePath, metadata) {
+    if (!this.previousMetadata[filePath]) {
+      this.previousMetadata[filePath] = {};
+    }
+    this.trackedKeys.forEach((key) => {
+      if (metadata.hasOwnProperty(key)) {
+        this.previousMetadata[filePath][key] = metadata[key];
+      }
+    });
+  }
+  onunload() {
+    console.log("Unloading RenameOnYAMLPlugin");
   }
 };
 /*! Bundled license information:

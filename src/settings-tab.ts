@@ -35,6 +35,7 @@ export default class RenameOnYAMLSettingTab extends PluginSettingTab {
       this.createFolderSetting(containerEl, setting, index);
     });
 
+   
     new Setting(containerEl)
       .addButton((button) => {
         button.setButtonText('Add Folder Setting').onClick(() => {
@@ -119,4 +120,4 @@ export default class RenameOnYAMLSettingTab extends PluginSettingTab {
         });
       });
   }
-}
+} 
