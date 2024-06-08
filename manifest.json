@@ -1,0 +1,10 @@
+{
+  "id": "yaml-file-renamer",
+  "name": "YAML File renamer",
+  "version": "0.0.1",
+  "minAppVersion": "0.9.12",
+  "description": "Simple Plugin to rename a file by changing a YAML value",
+  "author": "Arne Nostitz-Rieneck",
+  "authorUrl": "",
+  "isDesktopOnly": false
+}
