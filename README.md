@@ -16,6 +16,7 @@ ONLY tested on Mac!
 copy "yaml-file-rename" folder (the one with main.js and manifest.json) into your plugins folder. activate in settings after restart
 
 # using
+- Set the folder you want the setting to take effect in. You can have multiple settings for different folders.
 - Define settings with placeholder values in curly brackets {YAML-Property}
 - You can add all file-name legal characters as well.
 - {date} fields need a format set in (): {date(YYYY-MM-DD)}
