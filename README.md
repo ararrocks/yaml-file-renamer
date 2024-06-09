@@ -1,7 +1,8 @@
 # yaml-file-renamer
 
 
-![SCR-20240609-ldmn](https://github.com/ararrocks/yaml-file-renamer/assets/171629355/854a3544-5279-4ca5-adec-6d7d8eb13041)
+![SCR-20240609-ldmn](https://github.com/ararrocks/yaml-file-renamer/assets/171629355/344e2723-8eb4-442f-a069-cc7da20799ec)
+
 
 
 Obsidian Plugin: Renames a file when defined YAML properties changed
