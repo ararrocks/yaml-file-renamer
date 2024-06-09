@@ -2,7 +2,7 @@ import { App, PluginSettingTab, Setting, Notice } from 'obsidian';
 import RenameOnYAMLPlugin from './main';
 import { FolderSuggest } from './folder-suggest';
 
-const ILLEGAL_CHARACTERS = /[\\/:*?"<>|[\]()]/;  // Remove the global flag
+const ILLEGAL_CHARACTERS = /[\\/:*?"<>|]/; // Remove the global flag
 
 // Add CSS dynamically
 const css = `

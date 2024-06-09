@@ -1,8 +1,9 @@
 import { Plugin, TFile } from 'obsidian';
+import moment from 'moment'; // Add moment.js for date formatting
 import matter from 'gray-matter';
 import RenameOnYAMLSettingTab from './settings-tab';
 
-const ILLEGAL_CHARACTERS = /[\\/:*?"<>|[\](){}]/g;
+const ILLEGAL_CHARACTERS = /[\\/:*?"<>|]/g;
 const BRACKETS_AND_PARENS = /[()[\]{}]/g;
 
 interface FolderSetting {
@@ -63,7 +64,7 @@ export default class RenameOnYAMLPlugin extends Plugin {
       const matches = folderSetting.fileNameTemplate.match(/{(.*?)}/g);
       if (matches) {
         for (const match of matches) {
-          const key = match.replace(/[{}]/g, '');
+          const key = match.replace(/[{}]/g, '').split('(')[0]; // Extract the key before any parentheses
           if (!this.trackedKeys.includes(key)) {
             this.trackedKeys.push(key);
           }
@@ -74,46 +75,62 @@ export default class RenameOnYAMLPlugin extends Plugin {
 
   async handleFileChange(file: TFile) {
     if (file.extension !== 'md') return;
-
+  
     const content = await this.app.vault.read(file);
     const { data } = matter(content);
-
+  
     if (data) {
       const hasTrackedKeyChanged = this.trackedKeys.some(key => 
         data.hasOwnProperty(key) && 
         (!this.previousMetadata[file.path] || this.previousMetadata[file.path][key] !== data[key]) &&
         data[key] != null && data[key] !== ''
       );
-      
+  
       if (!hasTrackedKeyChanged) return; // Exit if no tracked key has changed
-
+  
       for (const folderSetting of this.settings.folderSettings) {
         if (file.path.startsWith(folderSetting.folderPath)) {
           let newFileName = folderSetting.fileNameTemplate;
-
-          // Replace placeholders with YAML values, ignore keys that are null, empty or not present in YAML
-          for (const key in data) {
-            if (data.hasOwnProperty(key) && data[key] != null && data[key] !== '') {
-              newFileName = newFileName.replace(`{${key}}`, data[key]);
-            } else {
-              newFileName = newFileName.replace(`{${key}}`, '');
-            }
+  
+          // Extract keys from the filename template
+          const matches = newFileName.match(/{(.*?)}/g);
+          if (matches) {
+            matches.forEach(match => {
+              const keyWithFormat = match.replace(/[{}]/g, '');
+              //console.log('match', match);
+              const [key, dateFormat] = keyWithFormat.includes('(') ? keyWithFormat.split(/[\(\)]/) : [keyWithFormat, null];
+              //console.log('key', key, 'dateFormat', dateFormat);
+  
+              if (data.hasOwnProperty(key) && data[key] != null && data[key] !== '') {
+                let value = data[key];
+                //console.log('value', value);
+                if (dateFormat && dateFormat!== 'none') {
+                  const offset = moment(value).utcOffset();
+                  value = moment.utc(value).format(dateFormat);
+                  newFileName = newFileName.replace(`{${keyWithFormat}}`, value);
+                } else {
+                  newFileName = newFileName.replace(`{${key}}`, value);
+                }
+              } else {
+                newFileName = newFileName.replace(`{${key}}`, '');
+              }
+            });
           }
-
+  
           // Remove brackets and parentheses
           newFileName = newFileName.replace(BRACKETS_AND_PARENS, '');
-
+  
           // Ensure the new file name is valid
           if (ILLEGAL_CHARACTERS.test(newFileName)) {
             new Notice('The generated file name contains illegal characters.');
             return;
           }
-
+  
           // Ensure the new file name ends with .md
           if (!newFileName.endsWith('.md')) {
             newFileName += '.md';
           }
-
+  
           // Check if the new file name already exists
           const filePath = file.path.split('/').slice(0, -1).join('/');
           const newFilePath = `${filePath}/${newFileName}`;
@@ -121,15 +138,15 @@ export default class RenameOnYAMLPlugin extends Plugin {
             new Notice(`A file named "${newFileName}" already exists.`);
             return;
           }
-
+  
           if (file.name !== newFileName && newFileName !== null && newFileName !== '' && newFileName !== 'null') {
-            console.log(newFileName);
+            console.log(`Renaming file from ${file.name} to: ${newFileName}`);
             await this.app.vault.rename(file, newFilePath);
           }
           break;
         }
       }
-
+  
       // Update previous metadata after handling changes
       this.updatePreviousMetadata(file.path, data);
     }
