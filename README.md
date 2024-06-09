@@ -25,6 +25,12 @@ copy "yaml-file-rename" folder (the one with main.js and manifest.json) into you
 # Example
 if your YAML properties are "first-name" and "last-name" then you can set "{last-name}, {first-name}". 
 
+
+https://github.com/ararrocks/yaml-file-renamer/assets/171629355/349f8a09-16e0-410b-b1ec-ec1bf4d7f4db
+
+
+
+
 # Info
 - if the folder is set multiple times, you get a visual warning. the rename happens on the first setting in the list that matches
 - if illegal characters are in the file name the rename will not happen
